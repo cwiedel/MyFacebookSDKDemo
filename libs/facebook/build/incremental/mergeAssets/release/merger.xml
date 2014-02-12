@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger>
+
+    <dataSet config="main" >
+        <source path="/Users/hellman/Sources/PIA4/MyFacebookLogin/libs/facebook/src/main/assets" />
+    </dataSet>
+    <dataSet config="release" >
+        <source path="/Users/hellman/Sources/PIA4/MyFacebookLogin/libs/facebook/src/release/assets" />
+    </dataSet>
+
+</merger>
