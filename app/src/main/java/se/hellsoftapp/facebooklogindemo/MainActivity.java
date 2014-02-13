@@ -1,14 +1,20 @@
-package se.hellsoft.facebooklogindemo;
+package se.hellsoftapp.facebooklogindemo;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
 import com.facebook.Session;
@@ -51,10 +57,14 @@ public class MainActivity extends FragmentActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    public void onFacebookRefresh(View view) {
+        MyFacebookSyncService.startActionUpdateFromWall(this);
+    }
+
     /**
      * A placeholder fragment containing a simple view.
      */
-    public static class FacebookLoginFragment extends Fragment {
+    public static class FacebookLoginFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
         private Session.StatusCallback mCallback = new Session.StatusCallback() {
             @Override
@@ -63,6 +73,7 @@ public class MainActivity extends FragmentActivity {
             }
         };
         private UiLifecycleHelper mUiHelper;
+        private SimpleCursorAdapter mListAdapter;
 
         public FacebookLoginFragment() {
         }
@@ -91,10 +102,14 @@ public class MainActivity extends FragmentActivity {
         }
 
         private void onSessionStateChange(Session session, SessionState state, Exception e) {
+            View refreshButton = getActivity().findViewById(R.id.refresh_button);
             if(session.isOpened()) {
                 Toast.makeText(getActivity(), "User logged in to Facebook.", Toast.LENGTH_SHORT).show();
+                refreshButton.setEnabled(true);
             } else if(session.isClosed()) {
                 Toast.makeText(getActivity(), "User logged out from Facebook.", Toast.LENGTH_SHORT).show();
+                refreshButton.setEnabled(false);
+                MyFacebookSyncService.startActionUserLogout(getActivity());
             }
         }
 
@@ -123,12 +138,52 @@ public class MainActivity extends FragmentActivity {
         }
 
         @Override
+        public void onActivityCreated(Bundle savedInstanceState) {
+            super.onActivityCreated(savedInstanceState);
+
+            mListAdapter = new SimpleCursorAdapter(getActivity(),
+                    R.layout.facebook_message,
+                    null,
+                    new String[] {MyFacebookWall.Contract.FROM_NAME,
+                            MyFacebookWall.Contract.MESSAGE},
+                    new int[] {R.id.from_name, R.id.message}, 0);
+
+            getLoaderManager().initLoader(0, null, this);
+        }
+
+        @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.facebook_login, container, false);
             LoginButton loginButton = (LoginButton) rootView.findViewById(R.id.facebookLoginButton);
             loginButton.setFragment(this);
+            loginButton.setReadPermissions("user_status",
+                    "user_friends", "friends_status",
+                    "read_stream");
+
+            ListView facebookMessages = (ListView) rootView.findViewById(R.id.facebook_message_list);
+            facebookMessages.setAdapter(mListAdapter);
             return rootView;
+        }
+
+        @Override
+        public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+            return new CursorLoader(getActivity(),
+                    MyFacebookWall.Contract.FACEBOOK_WALL_URI,
+                    new String[] {MyFacebookWall.Contract.ID,
+                            MyFacebookWall.Contract.FROM_NAME,
+                            MyFacebookWall.Contract.MESSAGE},
+                    null, null, null);
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Cursor> objectLoader, Cursor cursor) {
+            mListAdapter.swapCursor(cursor);
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Cursor> objectLoader) {
+
         }
     }
 
