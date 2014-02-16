@@ -10,24 +10,41 @@
 
     <com.facebook.widget.LoginButton
         android:id="@+id/facebookLoginButton"
-        android:layout_centerHorizontal="true"
         android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
-    <Button
-        android:id="@+id/refresh_button"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/buttons"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@id/facebookLoginButton"
-        android:enabled="false"
-        android:text="@string/refresh_label"
-        android:onClick="onFacebookRefresh"/>
+        android:orientation="horizontal"
+        android:layout_below="@id/facebookLoginButton">
+
+        <Button
+            android:id="@+id/refresh_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:layout_weight="1"
+            android:text="@string/refresh_label"
+            android:onClick="onFacebookRefresh"/>
+
+        <Button
+            android:id="@+id/post_photo_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/post_photo_label"
+            android:enabled="false"
+            android:onClick="onPostPhotoClicked"/>
+    </LinearLayout>
+
 
     <ListView
         android:id="@+id/facebook_message_list"
-        android:layout_below="@id/refresh_button"
+        android:layout_below="@id/buttons"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
