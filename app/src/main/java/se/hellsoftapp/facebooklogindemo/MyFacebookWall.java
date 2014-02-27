@@ -21,6 +21,7 @@ public class MyFacebookWall extends ContentProvider {
             + Contract.FROM_ID + " TEXT, "
             + Contract.FROM_NAME + " TEXT, "
             + Contract.CREATED_TIME + " TEXT, "
+            + Contract.PLACE_ID + " TEXT, "
             + Contract.TYPE + " TEXT);";
     public static final int ALL_MESSAGES = 1;
     public static final int ONE_MESSAGE = 2;
@@ -43,6 +44,7 @@ public class MyFacebookWall extends ContentProvider {
         public static final String TYPE = "type";
         public static final String MESSAGE = "message";
         public static final String CREATED_TIME = "created_time";
+        public static final String PLACE_ID = "place_id";
 
         public static final String AUTHORITY = "se.hellsoftapp.facebooklogindemo.provider";
         public static final String TABLE_NAME = "facebook_message";

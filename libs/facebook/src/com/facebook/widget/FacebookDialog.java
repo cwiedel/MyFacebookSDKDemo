@@ -24,6 +24,8 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+
 import com.facebook.*;
 import com.facebook.internal.NativeProtocol;
 import com.facebook.internal.Utility;
@@ -431,7 +433,7 @@ public class FacebookDialog {
          * Constructor.
          * @param activity the Activity which is presenting the native Share dialog; must not be null
          */
-        public ShareDialogBuilder(Activity activity) {
+        public ShareDialogBuilder(FragmentActivity activity) {
             super(activity);
         }
 

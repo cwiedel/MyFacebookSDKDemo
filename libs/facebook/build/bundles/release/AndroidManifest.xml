@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 -->
-<!-- From: file:/Users/hellman/Sources/PIA4/MyFacebookLogin/libs/facebook/AndroidManifest.xml -->
+<!-- From: file:/Users/chrillan/Dropbox/dev/android/MyFacebookSDKDemo/libs/facebook/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.facebook.android">
     <application/>
     <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="19"/>

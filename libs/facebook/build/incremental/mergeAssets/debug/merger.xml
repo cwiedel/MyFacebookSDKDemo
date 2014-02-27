@@ -2,10 +2,10 @@
 <merger>
 
     <dataSet config="main" >
-        <source path="/Users/hellman/Sources/PIA4/MyFacebookLogin/libs/facebook/src/main/assets" />
+        <source path="/Users/chrillan/Dropbox/dev/android/MyFacebookSDKDemo/libs/facebook/src/main/assets" />
     </dataSet>
     <dataSet config="debug" >
-        <source path="/Users/hellman/Sources/PIA4/MyFacebookLogin/libs/facebook/src/debug/assets" />
+        <source path="/Users/chrillan/Dropbox/dev/android/MyFacebookSDKDemo/libs/facebook/src/debug/assets" />
     </dataSet>
 
 </merger>

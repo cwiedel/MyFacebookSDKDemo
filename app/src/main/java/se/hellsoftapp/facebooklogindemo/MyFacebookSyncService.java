@@ -1,6 +1,8 @@
 package se.hellsoftapp.facebooklogindemo;
 
+import android.app.AlarmManager;
 import android.app.IntentService;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -10,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.facebook.HttpMethod;
@@ -37,6 +40,9 @@ public class MyFacebookSyncService extends IntentService {
     private static final String ACTION_POST_PHOTO = "se.hellsoft.facebooklogindemo.action.POST_PHOTO";
     private static final String FACEBOOK_PREFS = "facebook_settings";
     private static final String NEXT_SINCE_VALUE = "nextSinceValue";
+    private static AlarmManager alarmMgr;
+    private static PendingIntent alarmIntent;
+
 
     /**
      * Starts this service to perform action Foo with the given parameters. If
@@ -47,7 +53,12 @@ public class MyFacebookSyncService extends IntentService {
     public static void startActionUpdateFromWall(Context context) {
         Intent intent = new Intent(context, MyFacebookSyncService.class);
         intent.setAction(ACTION_UPDATE_FROM_WALL);
+        PendingIntent pendingIntent = PendingIntent.getService(context, 0, intent, 0);
+
+        alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+        alarmMgr.setInexactRepeating(AlarmManager.ELAPSED_REALTIME,0, AlarmManager.INTERVAL_FIFTEEN_MINUTES, pendingIntent );
         context.startService(intent);
+
     }
 
     /**
@@ -62,10 +73,11 @@ public class MyFacebookSyncService extends IntentService {
         context.startService(intent);
     }
 
-    public static void startPostFacebookPhoto(Context context, Uri photoUri) {
+    public static void startPostFacebookPhoto(Context context, Uri photoUri, String caption) {
         Intent intent = new Intent(context, MyFacebookSyncService.class);
         intent.setAction(ACTION_POST_PHOTO);
         intent.setData(photoUri);
+        intent.putExtra("caption", caption);
         context.startService(intent);
     }
 
@@ -77,17 +89,20 @@ public class MyFacebookSyncService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         if (intent != null) {
             final String action = intent.getAction();
+
             if (ACTION_UPDATE_FROM_WALL.equals(action)) {
                 handleActionUpdateFromWall();
+                Log.d(MainActivity.TAG, "update triggered");
             } else if (ACTION_POST_PHOTO.equals(action)) {
-                handlePhotoUpload(intent.getData());
+                String caption = intent.getStringExtra("caption");
+                handlePhotoUpload(intent.getData(), caption);
             } else if (ACTION_USER_LOGOUT.equals(action)) {
                 handleActionUserLogout();
             }
         }
     }
 
-    private void handlePhotoUpload(Uri photoUri) {
+    private void handlePhotoUpload(Uri photoUri, String caption) {
         Session session = Session.getActiveSession();
         boolean isOpened = session.isOpened();
         Log.d(MainActivity.TAG, "Logged in to facebook: " + isOpened);
@@ -100,8 +115,17 @@ public class MyFacebookSyncService extends IntentService {
                     public void onCompleted(Response response) {
                         Log.d(MainActivity.TAG, "Response: " + response.getError());
                     }
+
                 });
+
+                // ADD CAPTION FROM OUR TEXTFIELD
+                Bundle params = request.getParameters();
+                params.putString("name", caption);
+                request.setParameters(params);
+
+
                 Response response = request.executeAndWait();
+
                 GraphObject graphObject = response.getGraphObject();
                 if (graphObject != null) {
                     Log.d(MainActivity.TAG, graphObject.toString());
@@ -129,7 +153,8 @@ public class MyFacebookSyncService extends IntentService {
                     = getSharedPreferences(FACEBOOK_PREFS, MODE_PRIVATE);
             long nextSinceValue = preferences.getLong(NEXT_SINCE_VALUE, -1);
             Bundle params = new Bundle();
-            params.putString("fields", "id,from,message,type");
+            params.putString("fields", "id,from,message,type,place");
+            params.putInt("limit", 50);
             String graphPath = "me/home";
             if (nextSinceValue > 0) {
                 params.putLong("since", nextSinceValue);
@@ -169,8 +194,18 @@ public class MyFacebookSyncService extends IntentService {
         String fromId = from.getString("id");
         String fromName = from.getString("name");
         String type = wallMessage.getString("type");
-        String message = wallMessage.getString("message");
+        String message = wallMessage.optString("message");
         String createdTime = wallMessage.getString("created_time");
+
+        String placeName = " ";
+
+        if(!wallMessage.isNull("place")){
+            JSONObject place = wallMessage.getJSONObject("place");
+            placeName = place.optString("name");
+        }
+
+       // Log.d("storeWallMSG", "place JSON: " +place );
+
 
         ContentValues values = new ContentValues();
         values.put(MyFacebookWall.Contract.MESSAGE_ID, messageId);
@@ -179,6 +214,8 @@ public class MyFacebookSyncService extends IntentService {
         values.put(MyFacebookWall.Contract.MESSAGE, message);
         values.put(MyFacebookWall.Contract.TYPE, type);
         values.put(MyFacebookWall.Contract.CREATED_TIME, createdTime);
+        values.put(MyFacebookWall.Contract.PLACE_ID, placeName);
+
         Uri newMessage = getContentResolver()
                 .insert(MyFacebookWall.Contract.FACEBOOK_WALL_URI,
                         values);

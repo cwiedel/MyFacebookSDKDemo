@@ -13,7 +13,9 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:focusable="true"
+        android:focusableInTouchMode="true"/>
 
     <LinearLayout
         android:id="@+id/buttons"
@@ -29,7 +31,7 @@
             android:enabled="false"
             android:layout_weight="1"
             android:text="@string/refresh_label"
-            android:onClick="onFacebookRefresh"/>
+            android:onClick="onFacebookRefresh" />
 
         <Button
             android:id="@+id/post_photo_button"
@@ -38,14 +40,31 @@
             android:layout_weight="1"
             android:text="@string/post_photo_label"
             android:enabled="false"
-            android:onClick="onPostPhotoClicked"/>
+            android:onClick="onPostPhotoClicked" />
+
+        <Button
+            android:id="@+id/post_fbshare_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/post_fbshare_label"
+            android:enabled="false" />
     </LinearLayout>
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:id="@+id/postStatusTextView"
+        android:layout_below="@id/buttons"
+        android:hint="Share something"
+        android:enabled="false"
+        />
 
     <ListView
+        android:paddingTop="10dp"
         android:id="@+id/facebook_message_list"
-        android:layout_below="@id/buttons"
+        android:layout_below="@id/postStatusTextView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
 </RelativeLayout>

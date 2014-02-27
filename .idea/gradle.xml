@@ -7,10 +7,10 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/app" />
+            <option value="$USER_HOME$/Dropbox/dev/android/MyFacebookSDKDemo" />
+            <option value="$USER_HOME$/Dropbox/dev/android/MyFacebookSDKDemo/app" />
+            <option value="$USER_HOME$/Dropbox/dev/android/MyFacebookSDKDemo/libs/facebook" />
             <option value="$PROJECT_DIR$/libs" />
-            <option value="$PROJECT_DIR$/libs/facebook" />
           </set>
         </option>
       </GradleProjectSettings>

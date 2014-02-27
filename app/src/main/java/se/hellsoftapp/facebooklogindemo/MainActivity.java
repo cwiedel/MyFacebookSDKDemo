@@ -18,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
@@ -25,6 +26,7 @@ import android.widget.Toast;
 import com.facebook.Session;
 import com.facebook.SessionState;
 import com.facebook.UiLifecycleHelper;
+import com.facebook.widget.FacebookDialog;
 import com.facebook.widget.LoginButton;
 import com.facebook.widget.ProfilePictureView;
 
@@ -35,16 +37,19 @@ import java.util.Date;
 public class MainActivity extends FragmentActivity {
     public static final String TAG = "FacebookLoginDemo";
     private static final int CAPTURE_PHOTO_REQUEST_CODE = 1001;
-    private Uri mCapturedPhotoUri;
+    public static Uri mCapturedPhotoUri;
+    private FacebookLoginFragment mFacebookLoginFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mFacebookLoginFragment = new FacebookLoginFragment();
+
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new FacebookLoginFragment())
+                    .add(R.id.container, mFacebookLoginFragment)
                     .commit();
         }
     }
@@ -52,7 +57,6 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
@@ -76,7 +80,23 @@ public class MainActivity extends FragmentActivity {
 
         if (requestCode == CAPTURE_PHOTO_REQUEST_CODE && resultCode == RESULT_OK) {
             Log.d(TAG, "Photo captured: " + mCapturedPhotoUri);
-            MyFacebookSyncService.startPostFacebookPhoto(this, mCapturedPhotoUri);
+
+            Session session = Session.getActiveSession();
+            if (session.isOpened()) {
+                session.requestNewPublishPermissions(
+                        new Session.NewPermissionsRequest(this,
+                                "publish_stream"));
+
+            String fbShareString = "";
+            if(mFacebookLoginFragment.mShareStatusText != null) {
+                if(mFacebookLoginFragment.mShareStatusText.getText().length() > 0) {
+                    fbShareString = mFacebookLoginFragment.mShareStatusText.getText().toString();
+                    Log.d(TAG, "share string:" +fbShareString);
+                }
+            }
+
+            MyFacebookSyncService.startPostFacebookPhoto(this, mCapturedPhotoUri, fbShareString);
+            }
         }
     }
 
@@ -85,20 +105,14 @@ public class MainActivity extends FragmentActivity {
     }
 
     public void onPostPhotoClicked(View view) {
-        Session session = Session.getActiveSession();
-        if (session.isOpened()) {
-            session.requestNewPublishPermissions(
-                    new Session.NewPermissionsRequest(this,
-                            "publish_stream"));
+        Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        mCapturedPhotoUri = getOutputPhotoUri(this);
 
-            Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            mCapturedPhotoUri = getOutputPhotoUri(this);
+        takePhotoIntent.putExtra(MediaStore.EXTRA_OUTPUT, mCapturedPhotoUri);
 
-            takePhotoIntent.putExtra(MediaStore.EXTRA_OUTPUT, mCapturedPhotoUri);
-
-            startActivityForResult(takePhotoIntent, CAPTURE_PHOTO_REQUEST_CODE);
-        }
+        startActivityForResult(takePhotoIntent, CAPTURE_PHOTO_REQUEST_CODE);
     }
+
 
     private static Uri getOutputPhotoUri(Context context) {
         File mediaStorageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
@@ -114,10 +128,11 @@ public class MainActivity extends FragmentActivity {
     }
 
 
+
     /**
      * A placeholder fragment containing a simple view.
      */
-    public static class FacebookLoginFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+    public static class FacebookLoginFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>, View.OnClickListener {
 
         private Session.StatusCallback mCallback = new Session.StatusCallback() {
             @Override
@@ -127,6 +142,7 @@ public class MainActivity extends FragmentActivity {
         };
         private UiLifecycleHelper mUiHelper;
         private SimpleCursorAdapter mListAdapter;
+        private EditText mShareStatusText;
 
         public FacebookLoginFragment() {
         }
@@ -137,6 +153,8 @@ public class MainActivity extends FragmentActivity {
             mUiHelper = new UiLifecycleHelper(getActivity(), mCallback);
             mUiHelper.onCreate(savedInstanceState);
         }
+
+
 
         @Override
         public void onResume() {
@@ -157,14 +175,23 @@ public class MainActivity extends FragmentActivity {
         private void onSessionStateChange(final Session session, SessionState state, Exception e) {
             View refreshButton = getActivity().findViewById(R.id.refresh_button);
             View photoButton = getActivity().findViewById(R.id.post_photo_button);
+            View postStatusTextView = getActivity().findViewById(R.id.postStatusTextView);
+            View fbShareButton = getActivity().findViewById(R.id.post_fbshare_button);
+            fbShareButton.setOnClickListener(this);
+            mShareStatusText = (EditText) getActivity().findViewById(R.id.postStatusTextView);
+
             if (session.isOpened()) {
                 Toast.makeText(getActivity(), "User logged in to Facebook.", Toast.LENGTH_SHORT).show();
                 refreshButton.setEnabled(true);
                 photoButton.setEnabled(true);
+                fbShareButton.setEnabled(true);
+                postStatusTextView.setEnabled(true);
             } else if (session.isClosed()) {
                 Toast.makeText(getActivity(), "User logged out from Facebook.", Toast.LENGTH_SHORT).show();
                 photoButton.setEnabled(false);
                 refreshButton.setEnabled(false);
+                fbShareButton.setEnabled(false);
+                postStatusTextView.setEnabled(false);
                 MyFacebookSyncService.startActionUserLogout(getActivity());
             }
         }
@@ -200,14 +227,19 @@ public class MainActivity extends FragmentActivity {
             LoginButton loginButton = (LoginButton) rootView.findViewById(R.id.facebookLoginButton);
             loginButton.setFragment(this);
             loginButton.setReadPermissions("user_status", "user_friends",
-                    "friends_status", "read_stream");
+                    "friends_status", "read_stream", "friends_location");
 
             mListAdapter = new SimpleCursorAdapter(getActivity(),
                     R.layout.facebook_message,
                     null,
                     new String[]{MyFacebookWall.Contract.FROM_NAME,
-                            MyFacebookWall.Contract.MESSAGE, MyFacebookWall.Contract.FROM_ID},
-                    new int[]{R.id.from_name, R.id.message, R.id.profile_picture}, 0);
+                            MyFacebookWall.Contract.MESSAGE,
+                            MyFacebookWall.Contract.FROM_ID,
+                            MyFacebookWall.Contract.PLACE_ID},
+                    new int[]{R.id.from_name,
+                            R.id.message,
+                            R.id.profile_picture,
+                            R.id.place}, 0);
             mListAdapter.setViewBinder(new SimpleCursorAdapter.ViewBinder() {
                 @Override
                 public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
@@ -231,10 +263,13 @@ public class MainActivity extends FragmentActivity {
         public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
             return new CursorLoader(getActivity(),
                     MyFacebookWall.Contract.FACEBOOK_WALL_URI,
-                    new String[]{MyFacebookWall.Contract.ID,
+                    new String[]{
+                            MyFacebookWall.Contract.ID,
                             MyFacebookWall.Contract.FROM_NAME,
                             MyFacebookWall.Contract.FROM_ID,
-                            MyFacebookWall.Contract.MESSAGE},
+                            MyFacebookWall.Contract.MESSAGE,
+                            MyFacebookWall.Contract.PLACE_ID
+                    },
                     null, null, null);
         }
 
@@ -248,6 +283,25 @@ public class MainActivity extends FragmentActivity {
         public void onLoaderReset(Loader<Cursor> objectLoader) {
             Log.d(TAG, "Loader reset!");
         }
+
+        public String getPictureIfSet() {
+           String pic = MainActivity.mCapturedPhotoUri.toString();
+            Log.d(TAG, "pic string: "+pic);
+           return pic;
+        }
+
+        @Override
+        public void onClick(View v) {
+          //  String pic = getPictureIfSet();
+
+            if(v.getId() == R.id.post_fbshare_button) {
+                FacebookDialog shareDialog = new FacebookDialog.ShareDialogBuilder(getActivity())
+                        .setLink(null)
+                        .build();
+                mUiHelper.trackPendingDialogCall(shareDialog.present());
+            }
+        }
     }
 
 }
+

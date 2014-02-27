@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/MyFacebookLogin.iml" filepath="$PROJECT_DIR$/MyFacebookLogin.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/libs/facebook/facebook.iml" filepath="$PROJECT_DIR$/libs/facebook/facebook.iml" />
+      <module fileurl="file://$USER_HOME$/Dropbox/dev/android/MyFacebookSDKDemo/app/app.iml" filepath="$USER_HOME$/Dropbox/dev/android/MyFacebookSDKDemo/app/app.iml" />
+      <module fileurl="file://$USER_HOME$/Dropbox/dev/android/MyFacebookSDKDemo/libs/facebook/facebook.iml" filepath="$USER_HOME$/Dropbox/dev/android/MyFacebookSDKDemo/libs/facebook/facebook.iml" />
     </modules>
   </component>
 </project>
